@@ -24,8 +24,8 @@ jobs dependent upon them.
   class JobA(Job):
     pass
 
-  # each of the methods in JobB can take a kwarg
-  # that corresponds to JobA().transformed_data
+  # each of the methods in JobB can take a kwarg named
+  # a_param that corresponds to JobA().transformed_data
   @job_dependency(a_param=JobA)
   class JobB(Job):
     pass
