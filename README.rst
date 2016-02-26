@@ -24,8 +24,8 @@ jobs dependent upon them.
   class JobA(Job):
     pass
 
-  # each of the methods in JobB can take a kwarg
-  # that corresponds to JobA().transformed_data
+  # each of the methods in JobB can take a kwarg named
+  # a_param that corresponds to JobA().transformed_data
   @job_dependency(a_param=JobA)
   class JobB(Job):
     pass
@@ -44,7 +44,7 @@ jobs dependent upon them.
 
   # order submitted doesn't matter
   jobs = JobRunner([ JobD(), JobC(), JobA(), JobB(), JobE() ])
-  if jobs.run_all_jobs() == JOB_STATUS.FAILED:
+  if jobs.run_all_jobs().status == JOB_STATUS.FAILED:
     # to see this section in action add the following to
     # def transform(self): raise ValueError()
     # to the definition of JobD
@@ -53,3 +53,11 @@ jobs dependent upon them.
     print('Paths to sources of failure       : {}'.format(jobs.failed_job_root_paths())
   else:
     print('Success!')
+
+
+TODO
+====
+
+1. Support submitting a `JobRunner` as a job for nested job dependency graphs.
+2. Job cloning with different parent jobs than original object so jobs can be reused in different places.
+3. Implement `Job.create` factory method to dynamically create jobs with basic functions

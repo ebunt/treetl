@@ -50,6 +50,10 @@ class PolyTree(object):
     def get_node(self, id):
         return self.__node_map[id]
 
+    def clear_nodes(self):
+        self.__node_map = { }
+        self.__graph = { }
+
     def root_nodes(self):
         is_a_child_to_someone = set([
             child_id
