@@ -146,7 +146,10 @@ class JobRunner(object):
 
         return job_node.status
 
-    def run_all_jobs(self):
+    def run(self, start_from=None):
+        if start_from is not None:
+            raise NotImplementedError()
+
         self.status = JOB_STATUS.RUNNING
 
         for jn in self.__ptree.end_nodes():

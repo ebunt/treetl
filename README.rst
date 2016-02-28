@@ -21,13 +21,17 @@ jobs dependent upon them.
   )
 
   class JobA(Job):
-    pass
+    def transform(self, **kwargs):
+      self.transformed_data = 1
+      return self
 
   # each of the methods in JobB can take a kwarg named
   # a_param that corresponds to JobA().transformed_data
   @Job.dependency(a_param=JobA)
   class JobB(Job):
-    pass
+    def transform(self, a_param=None, **kwargs):
+      self.transformed_data = a_param + 1
+      return self
 
   @Job.dependency(some_b_param=JobB)
   class JobC(Job):
@@ -35,25 +39,29 @@ jobs dependent upon them.
 
   @Job.dependency(input_param=JobA)
   class JobD(Job):
-    pass
+    def transform(self, input_param=None, **kwargs):
+      self.transformed_data = input_param + 1
+      return self
 
   @Job.dependency(in_one=JobB, in_two=JobD)
   class JobE(Job):
     def transform(self, in_one=None, in_two=None, **kwargs):
       # do stuff with in_one.transformed_data and in_two.transformed_data
-      pass
+      self.transformed_data = in_one + in_two
 
   # order submitted doesn't matter
-  jobs = JobRunner([ JobD(), JobC(), JobA(), JobB(), JobE() ])
-  if jobs.run_all_jobs().status == JOB_STATUS.FAILED:
+  jobs = [ JobD(), JobC(), JobA(), JobB(), JobE() ]
+  job_runner = JobRunner(jobs)
+  if job_runner.run().status == JOB_STATUS.FAILED:
     # to see this section in action add the following to
     # def transform(self): raise ValueError()
     # to the definition of JobD
     print('Jobs failed')
-    print('Root jobs that caused the failure : {}'.format(jobs.failed_job_roots())
-    print('Paths to sources of failure       : {}'.format(jobs.failed_job_root_paths())
+    print('Root jobs that caused the failure : {}'.format(job_runner.failed_job_roots()))
+    print('Paths to sources of failure       : {}'.format(job_runner.failed_job_root_paths()))
   else:
     print('Success!')
+    print('JobE transformed data: {}'.format(jobs[4].transformed_data))
 
 
 TODO
@@ -64,3 +72,4 @@ TODO
 3. Job cloning with different parent jobs than original object so jobs can be reused in different places.
 4. Support submitting a `JobRunner` as a job for nested job dependency graphs.
 5. An `as_job` as either a mix-in or decorator for creating jobs out of other classes
+6. Run from a specific point in the tree. Allow for parents of starting point to retrieve last loaded data instead of recomputing the whole set of dependencies.

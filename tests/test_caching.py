@@ -68,7 +68,7 @@ class TestJobCaching(unittest.TestCase):
     def test_job_caching(self):
         from treetl.jobs import JobRunner
 
-        JobRunner(self.jobs).run_all_jobs()
+        JobRunner(self.jobs).run()
 
         # check order of calls including cache calls
         # make sure no cache calls were made on nodes without children
