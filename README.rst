@@ -40,7 +40,7 @@ jobs dependent upon them.
   @Job.dependency(in_one=JobB, in_two=JobD)
   class JobE(Job):
     def transform(self, in_one=None, in_two=None, **kwargs):
-      # do stuff in_one.transformed_data with in_two.transformed_data
+      # do stuff with in_one.transformed_data and in_two.transformed_data
       pass
 
   # order submitted doesn't matter
