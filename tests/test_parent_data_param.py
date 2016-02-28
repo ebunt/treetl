@@ -41,7 +41,7 @@ class TestParentDataParams(unittest.TestCase):
     def test_parent_data_params(self):
         from treetl.jobs import JobRunner
 
-        JobRunner(self.jobs).run_all_jobs()
+        JobRunner(self.jobs).run()
         self.assertDictEqual(
             d1=self.expected_results,
             d2=self.actual_results,

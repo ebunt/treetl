@@ -90,7 +90,7 @@ class TestJobExecutionOrder(unittest.TestCase):
     def test_job_order(self):
         from treetl.jobs import Job, JobRunner, JOB_STATUS
 
-        job_tree = JobRunner(self.jobs).run_all_jobs()
+        job_tree = JobRunner(self.jobs).run()
 
         self.order_checks(self.actual_execution_order)
         self.assertTrue(len(self.actual_execution_order) == len(self.jobs), msg='Some job transformed twice.')
@@ -109,7 +109,7 @@ class TestJobExecutionOrder(unittest.TestCase):
                 msg='Child of faulty, failed job was executed.'
             )
 
-        self.assertTrue(job_tree.run_all_jobs().status == JOB_STATUS.FAILED, msg='Job failure not recorded in status')
+        self.assertTrue(job_tree.run().status == JOB_STATUS.FAILED, msg='Job failure not recorded in status')
         self.assertItemsEqual(
             expected_seq=self.faulty_jobs,
             actual_seq=job_tree.failed_jobs(),
