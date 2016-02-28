@@ -17,8 +17,7 @@ jobs dependent upon them.
 .. code:: python
 
   from treetl.jobs import (
-    Job, job_dependency, 
-    JobRunner, JOB_STATUS
+    Job, JobRunner, JOB_STATUS
   )
 
   class JobA(Job):
@@ -26,21 +25,23 @@ jobs dependent upon them.
 
   # each of the methods in JobB can take a kwarg named
   # a_param that corresponds to JobA().transformed_data
-  @job_dependency(a_param=JobA)
+  @Job.dependency(a_param=JobA)
   class JobB(Job):
     pass
 
-  @job_dependency(some_b_param=JobB)
+  @Job.dependency(some_b_param=JobB)
   class JobC(Job):
     pass
 
-  @job_dependency(input_param=JobA)
+  @Job.dependency(input_param=JobA)
   class JobD(Job):
     pass
 
-  @job_dependency(in_one=JobB, in_two=JobD)
+  @Job.dependency(in_one=JobB, in_two=JobD)
   class JobE(Job):
-    pass
+    def transform(self, in_one=None, in_two=None, **kwargs):
+      # do stuff in_one.transformed_data with in_two.transformed_data
+      pass
 
   # order submitted doesn't matter
   jobs = JobRunner([ JobD(), JobC(), JobA(), JobB(), JobE() ])
@@ -58,6 +59,8 @@ jobs dependent upon them.
 TODO
 ====
 
-1. Support submitting a `JobRunner` as a job for nested job dependency graphs.
-2. Job cloning with different parent jobs than original object so jobs can be reused in different places.
-3. Implement `Job.create` factory method to dynamically create jobs with basic functions
+1. Implement `Job.create` factory method to dynamically create jobs with basic functions.
+2. Set/pass state parameters to job methods
+3. Job cloning with different parent jobs than original object so jobs can be reused in different places.
+4. Support submitting a `JobRunner` as a job for nested job dependency graphs.
+5. An `as_job` as either a mix-in or decorator for creating jobs out of other classes
