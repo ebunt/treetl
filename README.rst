@@ -67,7 +67,7 @@ jobs dependent upon them.
 TODO
 ====
 
-1. Implement `Job.create` factory method to dynamically create jobs with basic functions.
+1. DONE: Implement `Job.create` factory method to dynamically create jobs with basic functions.
 2. Set/pass state parameters to job methods
 3. Job cloning with different parent jobs than original object so jobs can be reused in different places.
 4. Support submitting a `JobRunner` as a job for nested job dependency graphs.
