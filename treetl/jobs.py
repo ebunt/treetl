@@ -24,11 +24,32 @@ class Job(object):
         return class_wrap
 
     @staticmethod
-    def create_as_job(job_name, extract=None, transform=None, load=None, cache=None, uncache=None, **kwargs):
-        # add support for dynamic job creation
-        raise NotImplementedError()
+    def create(job_name, extract=None, transform=None, load=None, cache=None, uncache=None, **kwargs):
+        def as_job_m(m, attr, prior_attr=None):
+            if m is not None:
+                def wrapped(self, **kwargs):
+                    if prior_attr is not None:
+                        kwargs[prior_attr] = getattr(self, prior_attr)
+                    res = m(**kwargs)
+                    if attr is not None:
+                        setattr(self, attr, res)
+                    return self
+                return wrapped
+            else:
+                return lambda self, **kwargs: self
+
+        new_job_type = type(job_name, (Job,), {
+            'extract': as_job_m(extract, 'extracted_data'),
+            'transform': as_job_m(transform, 'transformed_data', 'extracted_data'),
+            'load': as_job_m(load, None, 'transformed_data'),
+            'cache': as_job_m(cache, None, 'transformed_data'),
+            'uncache': as_job_m(uncache, None, 'transformed_data')
+        })
+
+        return Job.dependency(**kwargs)(new_job_type) if kwargs else new_job_type
 
     def __init__(self):
+        self.extracted_data = None
         self.transformed_data = None
 
     def extract(self, **kwargs):
