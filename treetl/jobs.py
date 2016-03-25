@@ -24,6 +24,76 @@ class Job(object):
         return class_wrap
 
     @staticmethod
+    def inject(*args):
+        def class_wrap(cls):
+            def new_by_type(f_type):
+                orig = getattr(cls, f_type)
+                def new_func(self, **kwargs):
+                    orig(self, **kwargs)
+                    for inj in args:
+                        if hasattr(inj, f_type):
+                            getattr(inj, f_type)(self, **kwargs)
+                    return self
+                return new_func
+
+            base_tup = [ cls ]
+            base_tup.extend([ inj for inj in list(set(args)) ])
+            base_tup = tuple(base_tup)
+            return type(cls.__name__, base_tup, {
+                m: new_by_type(m)
+                for m in [ 'extract', 'transform', 'load', 'cache', 'uncache' ]
+            })
+
+        return class_wrap
+
+    @staticmethod
+    def extractors(**kwargs):
+        """
+        Add extractors to a job. These are functions that do not take self.
+        :param kwargs: name_of_attribute_to_store_data_in = extractor_function
+        :return: wrapped class with the appended extractors
+        """
+        def class_wrap(cls):
+            orig_f = getattr(cls, 'extract')
+            def new_function(self, **nf_kwargs):
+                # call parent extract
+                orig_f(self, **nf_kwargs)
+                for k, v in kwargs.items():
+                    setattr(self, k, v(**nf_kwargs))
+                return self
+
+            return type(cls.__name__, (cls,), { 'extract': new_function }
+            )
+        return class_wrap
+
+    @staticmethod
+    def transformers(*args):
+        """
+        Add basic transformers to a job. These are functions that do not take self.
+        :param args: function w signature f(data_to_be_transformed, **kwargs) that returns post transform data
+        :return: wrapped class with the appended transformers
+        """
+        def class_wrap(cls):
+            orig_f = getattr(cls, 'transform')
+            def new_function(self, **nf_kwargs):
+                # call parent transform
+                orig_f(self, **nf_kwargs)
+
+                # if original transformer did anything get the transformed_data
+                next_data = getattr(self, 'transformed_data')
+                if next_data is None:
+                    # otherwise the first *args transformer should start with extracted_data
+                    next_data = getattr(self, 'extracted_data')
+
+                for a in args:
+                    setattr(self, 'transformed_data', a(next_data, **nf_kwargs))
+                    next_data = getattr(self, 'transformed_data')
+                return self
+
+            return type(cls.__name__, (cls,), { 'transform': new_function })
+        return class_wrap
+
+    @staticmethod
     def create(job_name, extract=None, transform=None, load=None, cache=None, uncache=None, **kwargs):
         def as_job_m(m, attr, prior_attr=None):
             if m is not None:
