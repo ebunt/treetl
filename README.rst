@@ -67,9 +67,8 @@ jobs dependent upon them.
 TODO
 ====
 
-1. DONE: Implement `Job.create` factory method to dynamically create jobs with basic functions.
-2. Set/pass state parameters to job methods
-3. Job cloning with different parent jobs than original object so jobs can be reused in different places.
-4. Support submitting a `JobRunner` as a job for nested job dependency graphs.
-5. An `as_job` as either a mix-in or decorator for creating jobs out of other classes
-6. Run from a specific point in the tree. Allow for parents of starting point to retrieve last loaded data instead of recomputing the whole set of dependencies.
+* Set/pass state parameters to job methods
+* Support submitting a `JobRunner` as a job for nested job dependency graphs.
+* An `as_job` as either a mix-in or decorator for creating jobs out of other classes
+* Run from a specific point in the tree. Allow for parents of starting point to retrieve last loaded data instead of recomputing the whole set of dependencies.
+* Ability to pass job attributes to component functions used in the decorator based definition of a job
