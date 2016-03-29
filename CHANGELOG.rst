@@ -1,4 +1,13 @@
 
+v1.2.1
+------
+
+  * Fix `Job.inject` bug that lead to infinite `super().__init__` recursion
+  * Injection is gone by appending all non ETL-CU attributes and methods to decorated job
+  * The main ETL-CU patches are made static and embedded in the base job's corresponding method
+  * All patches must now either inherit from `jobs.JobPatch` or set metaclass to `jobs.JobPatchMeta`
+
+
 v1.2.0
 ------
 

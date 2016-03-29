@@ -5,15 +5,18 @@ import unittest
 class TestJobInjection(unittest.TestCase):
 
     def setUp(self):
-        from treetl.jobs import Job
+        from treetl.jobs import Job, JobPatch
 
-        class PatchJob(Job):
+        class PatchJob(JobPatch):
             def __init__(self):
                 self.some_patch_param = 10
                 super(PatchJob, self).__init__()
 
+            def some_other_method(self):
+                return 2
+
             def extract(self, **kwargs):
-                self.extracted_data.append(2)
+                self.extracted_data.append(self.some_other_method())
                 self.extracted_data = sorted(self.extracted_data)
                 return self
 
@@ -36,6 +39,10 @@ class TestJobInjection(unittest.TestCase):
         self.patched_job = BaseJob()
 
     def test_job_injection(self):
+
+        self.assertTrue(hasattr(self.patched_job, 'some_patch_param'), msg='Failed to port PatchJob.some_patch_param')
+        self.assertTrue(hasattr(self.patched_job, 'some_other_method'), msg='Failed to port PatchJob.some_other_method')
+
         self.patched_job.extract().transform()
         self.assertEqual(self.patched_job.extracted_data, [ 1, 2, 3, 4 ], msg='Incorrect patched extracted_data')
         self.assertEqual(self.patched_job.transformed_data, 120, msg='Incorrect transformed data')
