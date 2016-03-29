@@ -6,6 +6,26 @@ from treetl.polytree import PolyTree, TreeNode
 JOB_STATUS = build_enum('QUEUE', 'RUNNING', 'DONE', 'FAILED')
 
 
+_job_methods = [ 'extract', 'transform', 'load', 'cache', 'uncache' ]
+
+
+class JobPatchMeta(type):
+    """
+    Metaclass for job patches that creates static version of ETL-CU methods. The static methods are named
+    `static_[method]` and plugged into the corresponding method in the job being patched.
+    """
+    def __new__(cls, name, bases, dict):
+        for m in _job_methods:
+            if m in dict:
+                dict['static_' + m] = staticmethod(dict[m])
+
+        return super(JobPatchMeta, cls).__new__(cls, name, bases, dict)
+
+
+# defined this way instead of with metaclass hooks for 2.x and 3.x portability
+JobPatch = JobPatchMeta(str('JobPatch'), (), {})
+
+
 class Job(object):
 
     # store the proper param names for transformed
@@ -25,24 +45,52 @@ class Job(object):
 
     @staticmethod
     def inject(*args):
+        """
+        Apply job patches without messing with the MRO. Extends the main definitions of extract, transform, load,
+        cache, and uncache. Adds all non-double underscore attributes and methods from injected classes.
+
+        In short, inheritance without MRO changes, extra bases, derived class et c.
+        :param args: Patches to be applied
+        :return: The decorated class with attributes added/extended
+        """
         def class_wrap(cls):
             def new_by_type(f_type):
                 orig = getattr(cls, f_type)
                 def new_func(self, **kwargs):
                     orig(self, **kwargs)
                     for inj in args:
-                        if hasattr(inj, f_type):
-                            getattr(inj, f_type)(self, **kwargs)
+                        if hasattr(inj, 'static_' + f_type):
+                            getattr(inj, 'static_' + f_type)(self, **kwargs)
                     return self
                 return new_func
 
-            base_tup = [ cls ]
-            base_tup.extend([ inj for inj in list(set(args)) ])
-            base_tup = tuple(base_tup)
-            return type(cls.__name__, base_tup, {
+            d = cls.__dict__.copy()
+            d.update({
                 m: new_by_type(m)
-                for m in [ 'extract', 'transform', 'load', 'cache', 'uncache' ]
+                for m in _job_methods
             })
+
+            # build new init
+            orig_init = cls.__init__
+            def new_init(self, *init_args, **kwargs):
+                orig_init(self, *init_args, **kwargs)
+
+                # create patch jobs and append class methods and attributes to base job
+                for a in args:
+                    try:
+                        next_patch = a(**kwargs)
+                    except:
+                        next_patch = a()
+
+                    for a_name in dir(next_patch):
+                        if a_name not in _job_methods and 'static_' not in a_name and not a_name.startswith('__'):
+                            setattr(cls, a_name, getattr(next_patch, a_name))
+
+            # make sure __init__ and ETL-CU are appended
+            cls.__init__ = new_init
+            for attr in _job_methods:
+                setattr(cls, attr, d[attr])
+            return cls
 
         return class_wrap
 
