@@ -25,7 +25,7 @@ class TestJobExecutionOrder(unittest.TestCase):
             chk(job_one, job_two)
 
     def setUp(self):
-        from treetl.jobs import Job
+        from treetl import Job
 
         self.actual_execution_order = [ ]
 
@@ -88,7 +88,7 @@ class TestJobExecutionOrder(unittest.TestCase):
         self.faulty_jobs = [ FaultyJob(), VictimJob(), OtherVictimJob() ]
 
     def test_job_order(self):
-        from treetl.jobs import Job, JobRunner, JOB_STATUS
+        from treetl import Job, JobRunner, JOB_STATUS
 
         job_tree = JobRunner(self.jobs).run()
 

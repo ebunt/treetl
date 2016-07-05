@@ -14,3 +14,7 @@ __version__ = pkg_info['version']
 pkg_config = ConfigReader(
     config_str=pkgutil.get_data(__package__, 'cfg/config.ini')
 )
+
+
+# core objects have the option to be imported at top level
+from treetl.job import *

@@ -5,7 +5,7 @@ import unittest
 class TestJobInjection(unittest.TestCase):
 
     def setUp(self):
-        from treetl.jobs import Job, JobPatch
+        from treetl import Job, JobPatch
 
         class PatchJob(JobPatch):
             def __init__(self):

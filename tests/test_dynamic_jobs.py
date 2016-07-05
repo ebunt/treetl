@@ -38,7 +38,7 @@ class TestDynamicJobCreation(unittest.TestCase):
         self.uncache = uncache
 
     def test_dyn_jobs(self):
-        from treetl.jobs import Job
+        from treetl import Job
 
         def make_job(**kwargs):
             return Job.create(
@@ -92,7 +92,7 @@ class TestDynamicJobCreation(unittest.TestCase):
                 return self
 
         # run with dependent jobs
-        from treetl.jobs import JobRunner
+        from treetl import JobRunner
 
         dyn_job = make_job(parent_data=Parent)()
         JobRunner(jobs=[ dyn_job ]).run()

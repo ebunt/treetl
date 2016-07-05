@@ -5,7 +5,7 @@ import unittest
 class TestParentDataParams(unittest.TestCase):
 
     def setUp(self):
-        from treetl.jobs import Job
+        from treetl import Job
 
         self.expected_results = { jn: i+1 for i, jn in enumerate([ 'JobA', 'JobB', 'JobC', 'JobD' ]) }
         self.actual_results = { }
@@ -39,7 +39,7 @@ class TestParentDataParams(unittest.TestCase):
         self.jobs = [ JobD(), JobA(), JobC(), JobB() ]
 
     def test_parent_data_params(self):
-        from treetl.jobs import JobRunner
+        from treetl import JobRunner
 
         JobRunner(self.jobs).run()
         self.assertDictEqual(
