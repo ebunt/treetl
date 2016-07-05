@@ -1,4 +1,6 @@
 
+from collections import namedtuple
+
 from treetl.job._job import Job
 from treetl.tools import build_enum
 from treetl.tools.polytree import PolyTree, TreeNode
@@ -7,10 +9,16 @@ from treetl.tools.polytree import PolyTree, TreeNode
 JOB_STATUS = build_enum('QUEUE', 'RUNNING', 'DONE', 'FAILED')
 
 
-class ParentJobException(Exception):
-    def __init__(self, parent_job_node, **kwargs):
-        super(ParentJobException, self).__init__(**kwargs)
-        self.parent_job_node = parent_job_node
+class JobException(Exception):
+    def __init__(self, job=None, *args, **kwargs):
+        super(JobException, self).__init__(*args, **kwargs)
+        self.job = job
+
+
+class ParentJobException(JobException):
+    def __init__(self, job=None, parent_job=None, *args, **kwargs):
+        super(ParentJobException, self).__init__(job, *args, **kwargs)
+        self.parent_job = parent_job
 
 
 class JobNode(TreeNode):
@@ -23,6 +31,10 @@ class JobNode(TreeNode):
 
 class JobRunner(object):
     def __init__(self, jobs=None):
+        # maintain order of explicitly submitted
+        # so that they can easily be retrieved
+        self._submitted_job_ids = [ ]
+
         self.__ptree = PolyTree()
         if jobs:
             self.add_jobs(jobs)
@@ -50,10 +62,12 @@ class JobRunner(object):
         parents = [
             get_or_create(parent)
             for parent in job.ETL_SIGNATURE.values()
-            ] if hasattr(job, 'ETL_SIGNATURE') else []
+        ] if hasattr(job, 'ETL_SIGNATURE') else []
 
         # add to job poly tree
         self.__ptree.add_node(job_node, parents)
+        if job_node.id not in self._submitted_job_ids:
+            self._submitted_job_ids.append(job_node.id)
 
         return self
 
@@ -66,9 +80,12 @@ class JobRunner(object):
             return {
                 param: self.__ptree.get_node(type_source.__name__).data.transformed_data
                 for param, type_source in job.ETL_SIGNATURE.items()
-                }
+            }
         else:
             return {}
+
+    def parents(self, job):
+        return self.__ptree.parents(JobNode(job))
 
     # runs a job and caches if needed
     def __run_single_job(self, job_node):
@@ -87,19 +104,19 @@ class JobRunner(object):
             job_node.data.load()
             job_node.status = JOB_STATUS.DONE
         except Exception as e:
-            job_node.error = e
+            job_node.error = JobException(job_node.data, e)
             job_node.status = JOB_STATUS.FAILED
 
     # runs a job and all its parents
     def __run_job_line(self, job_node):
 
         # run parent jobs
-        for parent in self.__ptree.parents(job_node):
+        for parent in self.parents(job_node.data):
             # no need to walk the whole chain if immediate parent is already done
             check_status = self.__run_job_line(parent) if parent.status == JOB_STATUS.QUEUE else parent.status
             if check_status == JOB_STATUS.FAILED:
                 job_node.status = JOB_STATUS.FAILED
-                job_node.error = ParentJobException(parent)
+                job_node.error = ParentJobException(job=job_node.data, parent_job=parent.data)
 
 
         # run current job
@@ -131,29 +148,43 @@ class JobRunner(object):
             child_job_node.data
             for child_job_node in self.__ptree.children(JobNode(job))
             if child_job_node.status == JOB_STATUS.QUEUE
+        ]
+
+    def job_results(self, job=None, submitted_only=False):
+        if job:
+            return self.__ptree.get_node(JobNode(job).id)
+        elif submitted_only:
+            return [
+                self.__ptree.get_node(id)
+                for id in self._submitted_job_ids
             ]
+        else:
+            return self.__ptree.nodes()
 
     def failed_jobs(self):
-        return [ node.data for node in self.__ptree.nodes() if node.status == JOB_STATUS.FAILED ]
+        return [ node.data for node in self.job_results() if node.status == JOB_STATUS.FAILED ]
 
     def failed_job_roots(self):
         return [
             node.data
             for node in self.__ptree.nodes()
-            if node.error is not None and not isinstance(node.error, ParentJobException)
-            ]
+            if isinstance(node.error, JobException) and not isinstance(node.error, ParentJobException)
+        ]
 
     def failed_job_root_paths(self):
         return {
             fail_root: self.all_paths(fail_root)
             for fail_root in self.failed_job_roots()
-            }
+        }
 
     def all_paths(self, job):
         return [
             [ path_item.data for path_item in path ]
             for path in self.__ptree.all_paths(JobNode(job))
-            ]
+        ]
+
+    def submitted_jobs(self):
+        return [ j.data for j in self.job_results(submitted_only=True) ]
 
     def jobs(self):
         return [ node.data for node in self.__ptree.nodes() ]
@@ -163,4 +194,5 @@ class JobRunner(object):
             job_node.status = JOB_STATUS.QUEUE
 
     def clear_jobs(self):
+        self._submitted_job_ids = []
         return self.__ptree.clear_nodes()
