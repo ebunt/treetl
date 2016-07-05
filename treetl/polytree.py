@@ -47,8 +47,11 @@ class PolyTree(object):
     def node_exists(self, node):
         return node.id in self.__node_map
 
-    def get_node(self, id):
-        return self.__node_map[id]
+    def get_node(self, id, default=None):
+        try:
+            return self.__node_map[id]
+        except:
+            return default
 
     def clear_nodes(self):
         self.__node_map = { }

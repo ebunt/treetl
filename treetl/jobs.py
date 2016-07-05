@@ -166,9 +166,10 @@ class Job(object):
 
         return Job.dependency(**kwargs)(new_job_type) if kwargs else new_job_type
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.extracted_data = None
         self.transformed_data = None
+        #super(Job, self).__init__(**kwargs)
 
     def extract(self, **kwargs):
         return self
@@ -218,9 +219,16 @@ class JobRunner(object):
             #   if job was added by parent inference, it's overwritten
             self.__ptree.get_node(job_node.id).data = job
 
+        def get_or_create(parent):
+            r = self.__ptree.get_node(parent.__name__)
+            if r is not None:
+                return r
+            else:
+                return JobNode(parent())
+
         # get parents
         parents = [
-            JobNode(parent())
+            get_or_create(parent)
             for parent in job.ETL_SIGNATURE.values()
         ] if hasattr(job, 'ETL_SIGNATURE') else []
 
