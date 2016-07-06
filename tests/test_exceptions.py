@@ -21,13 +21,9 @@ class TestJobException(unittest.TestCase):
         self.runner = JobRunner([ JobA(), JobB(), JobC() ])
 
     def test_exceptions(self):
-        print(self.runner.run())
-        print(self.runner.submitted_jobs())
-        print(self.runner.status)
-        print(self.runner.failed_job_root_paths())
-        print([ (j.status, j.error) for j in self.runner.job_results() ])
-
         from treetl.job import JobException, ParentJobException
+
+        self.runner.run()
 
         # run failed
         self.assertEqual(self.runner.run().status, 3)

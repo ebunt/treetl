@@ -4,7 +4,8 @@ v1.3.0
   * Reorged for a little less unnecessary nesting. Allow core objects to be surfaced at the top level
   * Add basic logging support
   * Made job runner exceptions a bit more explicit
-  # updated README
+  * updated README
+  * removed configuration stuff. don't really need that at the moment.
 
 v1.2.1
 ------
