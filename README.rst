@@ -1,12 +1,13 @@
-treetl: Running data pipelines with tree-like dependencies
-==========================================================
+treetl: Running ETL tasks with tree-like dependencies
+=====================================================
 
-Pipelines don't need to be linear. Sometimes there are shared intermediate transformations that can feed future steps 
-in the process. **treetl** manages and runs collections of dependent ETL jobs by storing and registering them
-as a `polytree <https://en.wikipedia.org/wiki/Polytree>`_.
+Pipelines of batch jobs don't need to be linear. Sometimes there are shared intermediate transformations that can feed
+future steps in the process. **treetl** manages and runs collections of dependent ETL jobs by storing and registering
+them as a `polytree <https://en.wikipedia.org/wiki/Polytree>`_.
 
 This package was put together with `Spark <http://spark.apache.org/>`_ jobs in mind, so caching intermediate and
-carrying results forward is top of mind.
+carrying results forward is top of mind. Due to this, one of the main benefits of **treetl** is that partial
+job results can be shared in memory.
 
 Example
 =======
@@ -16,7 +17,7 @@ jobs dependent upon them.
 
 .. code:: python
 
-  from treetl.jobs import (
+  from treetl import (
     Job, JobRunner, JOB_STATUS
   )
 
@@ -25,13 +26,17 @@ jobs dependent upon them.
       self.transformed_data = 1
       return self
 
-  # each of the methods in JobB can take a kwarg named
+  # JobB.transform can take a kwarg named
   # a_param that corresponds to JobA().transformed_data
   @Job.dependency(a_param=JobA)
   class JobB(Job):
     def transform(self, a_param=None, **kwargs):
       self.transformed_data = a_param + 1
       return self
+
+    def load(self, **kwargs):
+      # could save intermediate result self.transformed_data here
+      pass
 
   @Job.dependency(some_b_param=JobB)
   class JobC(Job):
@@ -67,8 +72,8 @@ jobs dependent upon them.
 TODO
 ====
 
+* Set parameters common to multiple jobs via the top level JobRunner
 * Set/pass state parameters to job methods
 * Support submitting a `JobRunner` as a job for nested job dependency graphs.
-* An `as_job` as either a mix-in or decorator for creating jobs out of other classes
 * Run from a specific point in the tree. Allow for parents of starting point to retrieve last loaded data instead of recomputing the whole set of dependencies.
 * Ability to pass job attributes to component functions used in the decorator based definition of a job

@@ -1,5 +1,5 @@
 {
   "name": "treetl",
-  "version": "1.2.1",
-  "description": "Job organizer for tree like dependencies in ETL jobs."
+  "version": "1.3.0",
+  "description": "Job organizer for ETL tasks with tree like dependencies."
 }
