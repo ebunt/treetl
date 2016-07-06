@@ -58,8 +58,4 @@ setup(
     ],
 
     test_suite='tests',
-
-    # Dependent packages (distributions)
-    # configparser is ConfigParser in old 2.x versions, so just lump it in
-    install_requires=[ 'configparser' ]
 )

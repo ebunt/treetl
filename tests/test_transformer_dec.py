@@ -5,7 +5,7 @@ import unittest
 class TestJobInjection(unittest.TestCase):
 
     def setUp(self):
-        from treetl.jobs import Job
+        from treetl import Job
 
         def transformer_one(data, **kwargs):
             return sum(data)

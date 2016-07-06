@@ -6,7 +6,7 @@ class TestJobExecutionOrder(unittest.TestCase):
 
     def setUp(self):
         from string import ascii_lowercase
-        from treetl.polytree import TreeNode
+        from treetl.tools.polytree import TreeNode
 
         self.nodes = [
             TreeNode(i, lett)
@@ -30,7 +30,7 @@ class TestJobExecutionOrder(unittest.TestCase):
 
     def test_tree(self):
 
-        from treetl.polytree import PolyTree
+        from treetl.tools.polytree import PolyTree
 
         poly_tree = PolyTree(nodes=self.nodes)
         for parent, child in self.node_arcs:

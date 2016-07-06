@@ -5,7 +5,7 @@ import unittest
 class TestJobDependencyDecorator(unittest.TestCase):
 
     def test_job_dep_dec(self):
-        from treetl.jobs import Job
+        from treetl import Job
 
         class JobA(Job):
             pass

@@ -5,7 +5,7 @@ import unittest
 class TestJobInjection(unittest.TestCase):
 
     def setUp(self):
-        from treetl.jobs import Job
+        from treetl import Job
         from string import ascii_lowercase
 
         def extractor_one(x='a', y='b', **kwargs):

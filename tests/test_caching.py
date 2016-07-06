@@ -25,7 +25,7 @@ class TestJobCaching(unittest.TestCase):
             )
 
     def setUp(self):
-        from treetl.jobs import Job
+        from treetl import Job
 
         self.event_sequence = [ ]
 
@@ -66,7 +66,7 @@ class TestJobCaching(unittest.TestCase):
         self.jobs = [ JobB(), JobA(), JobC(), JobD() ]
 
     def test_job_caching(self):
-        from treetl.jobs import JobRunner
+        from treetl import JobRunner
 
         JobRunner(self.jobs).run()
 
