@@ -47,3 +47,6 @@ class TestParentDataParams(unittest.TestCase):
             d2=self.actual_results,
             msg='Error in transformed data loaded to dict'
         )
+
+if __name__ == '__main__':
+    unittest.main()

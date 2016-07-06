@@ -1,4 +1,9 @@
 
+import logging
+from treetl.tools.joblogging import JobLogger
+
+job_logger = JobLogger(logging.getLogger(__name__))
+
 
 _job_methods = [ 'extract', 'transform', 'load', 'cache', 'uncache' ]
 
@@ -165,16 +170,21 @@ class Job(object):
         self.transformed_data = None
 
     def extract(self, **kwargs):
+        job_logger.log_method(self, 'extract', inp_kwargs=kwargs)
         return self
 
     def transform(self, **kwargs):
+        job_logger.log_method(self, 'transform', inp_kwargs=kwargs)
         return self
 
     def load(self, **kwargs):
+        job_logger.log_method(self, 'load', inp_kwargs=kwargs)
         return self
 
     def cache(self, **kwargs):
+        job_logger.log_method(self, 'cache', inp_kwargs=kwargs)
         return self
 
     def uncache(self, **kwargs):
+        job_logger.log_method(self, 'uncache', inp_kwargs=kwargs)
         return self

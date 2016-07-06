@@ -1,9 +1,13 @@
 
-from collections import namedtuple
+import logging
+from treetl.tools.joblogging import JobRunnerLogger
 
 from treetl.job._job import Job
 from treetl.tools import build_enum
 from treetl.tools.polytree import PolyTree, TreeNode
+
+
+job_runner_logger = JobRunnerLogger(logging.getLogger(__name__))
 
 
 JOB_STATUS = build_enum('QUEUE', 'RUNNING', 'DONE', 'FAILED')
@@ -64,6 +68,8 @@ class JobRunner(object):
             for parent in job.ETL_SIGNATURE.values()
         ] if hasattr(job, 'ETL_SIGNATURE') else []
 
+        job_runner_logger.add_jobs(job, parents)
+
         # add to job poly tree
         self.__ptree.add_node(job_node, parents)
         if job_node.id not in self._submitted_job_ids:
@@ -89,32 +95,44 @@ class JobRunner(object):
 
     # runs a job and caches if needed
     def __run_single_job(self, job_node):
+        job_runner_logger.start_job(job_node.data)
+
         job_node.status = JOB_STATUS.RUNNING
         try:
+            # stage/run job
+            job_runner_logger.log_job_method(job_node.data, 'extract')
             job_node.data.extract()
 
-            # stage/run job
-            job_node.data.transform(**self.__get_job_kwargs(job_node.data))
+            transform_params = self.__get_job_kwargs(job_node.data)
+            job_runner_logger.log_job_method(job_node.data, 'transform', transform_params)
+            job_node.data.transform(**transform_params)
 
             # if there are queued up children jobs, cache results
-            if len(self.children_in_queue(job_node.data)) > 0:
+            rem_children_job_ct = len(self.children_in_queue(job_node.data))
+            if rem_children_job_ct > 0:
+                job_runner_logger.log_job_method(job_node.data, 'cache', other_info={'children': rem_children_job_ct})
                 job_node.data.cache()
 
             # load results
+            job_runner_logger.log_job_method(job_node.data, 'load')
             job_node.data.load()
+
+            # mark job as done and move on
             job_node.status = JOB_STATUS.DONE
+            job_runner_logger.completed_job(job_node.data)
         except Exception as e:
+            job_runner_logger.job_error(job_node.data)
             job_node.error = JobException(job_node.data, e)
             job_node.status = JOB_STATUS.FAILED
 
     # runs a job and all its parents
     def __run_job_line(self, job_node):
-
         # run parent jobs
         for parent in self.parents(job_node.data):
             # no need to walk the whole chain if immediate parent is already done
             check_status = self.__run_job_line(parent) if parent.status == JOB_STATUS.QUEUE else parent.status
             if check_status == JOB_STATUS.FAILED:
+                job_runner_logger.skip_job(job_node.data, parent.data)
                 job_node.status = JOB_STATUS.FAILED
                 job_node.error = ParentJobException(job=job_node.data, parent_job=parent.data)
 
@@ -126,20 +144,24 @@ class JobRunner(object):
         # uncache parents that are no longer needed
         for parent in self.__ptree.parents(job_node):
             if len(self.children_in_queue(parent.data)) == 0:
+                job_runner_logger.log_job_method(parent.data, 'uncache')
                 parent.data.uncache()
 
         return job_node.status
 
     def run(self, start_from=None):
+
         if start_from is not None:
             raise NotImplementedError()
 
         self.status = JOB_STATUS.RUNNING
+        job_runner_logger.log_status(self.status)
 
         for jn in self.__ptree.end_nodes():
             self.__run_job_line(jn)
 
         self.status = JOB_STATUS.FAILED if len(self.failed_jobs()) else JOB_STATUS.DONE
+        job_runner_logger.log_status(self.status)
 
         return self
 
